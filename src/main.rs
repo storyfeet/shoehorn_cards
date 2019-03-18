@@ -1,118 +1,53 @@
-use mksvg::{page, Args, Card, SvgArg, SvgWrite};
+use clap::{clap_app, crate_version};
+use mksvg::page;
+use lazy_conf::LzList;
+use std::str::FromStr;
 
-#[derive(Clone, Debug, PartialEq)]
-enum CardType {
-    Skill,
-    Trait,
-    Event,
-    Scene,
-    Scenario,
-    Role,
-    Arc,
-    Whodunnit,
-    Other(String),
-}
+mod card_type;
+use card_type::CardType;
 
-impl CardType {
-    fn from_str(s: &str) -> Self {
-        use self::CardType::*;
-        match s {
-            "skill" => Skill,
-            "trait" => Trait,
-            "event" => Event,
-            "scene" => Scene,
-            "scenario" => Scenario,
-            "role" => Role,
-            "arc" => Arc,
-            "whodunnit" => Whodunnit,
-            v => Other(v.to_string()),
-        }
-    }
+mod card_front;
+use card_front::CardFront;
 
-    fn color(&self) -> &'static str {
-        match self {
-            CardType::Skill => "#99ff99",
-            CardType::Trait => "#ff9999",
-            CardType::Event => "#ff3333",
-            CardType::Scene => "#33ff33",
-            CardType::Scenario => "#3333ff",
-            CardType::Role => "#9999ff",
-            CardType::Arc => "#ffff99",
-            CardType::Whodunnit => "#99ffff",
-            CardType::Other(_) => "white",
-        }
-    }
-
-    fn text(&self) -> &str {
-        match self {
-            CardType::Skill => "Skill",
-            CardType::Trait => "Trait",
-            CardType::Event => "Event",
-            CardType::Scene => "Scene",
-            CardType::Scenario => "Scenario",
-            CardType::Role => "Role",
-            CardType::Arc => "Arc",
-            CardType::Whodunnit => "Whodunnit",
-            CardType::Other(s) => &s,
-        }
-    }
-}
-
-impl Card<f64> for CardType {
-    fn front<S: SvgWrite>(&self, s: &mut S, w: f64, h: f64) {
-        s.rect(0., 0., w, h, Args::new().stroke("none").fill("#eeeeee"));
-        s.rect(
-            w * 0.2,
-            0.,
-            w * 0.4,
-            h,
-            Args::new().stroke("none").fill(self.color()),
-        );
-        let mut s2 = s.g_rotate(-90., w * 0.5, h * 0.5);
-        s2.text(
-            self.text(),
-            w * 0.5,
-            h * 0.5,
-            h / 7.,
-            Args::new()
-                .text_anchor("middle")
-                .fill("black")
-                .font_family("Arial")
-                .font_weight("bold"),
-        );
-        s2.text(
-            "www.storyfeet.com",
-            w * 0.5,
-            h * 0.75,
-            h / 14.0,
-            Args::new()
-                .text_anchor("middle")
-                .fill("#aaaaaa")
-                .font_family("Arial")
-                .font_weight("bold"),
-        );
-    }
-}
-
-struct CardFront {
-    tp: String,
-    tx: String,
-}
 
 fn main() {
-    use self::CardType::*;
-    let cards = vec![
-        Skill,
-        Trait,
-        Event,
-        Scene,
-        Scenario,
-        Role,
-        Arc,
-        Whodunnit,
-        Other("OTHER".to_string()),
-    ];
-    let st = std::io::stdout();
-    let w = st.lock();
-    page::page_a4(w, 5, 7, &cards);
+    let clap = clap_app!(
+        Shoehorn_Cards =>
+            (about:"Build Cards for Shoehorn Circle")
+            (version:crate_version!())
+            (author:"Matthew Stoodley")
+            (@arg out_base:+required "The basename for the output files")
+            (@arg files: -f +takes_value ... "File to parse")
+    )
+    .get_matches();
+
+    let mut cards = Vec::new();
+    if let Some(ff) = clap.values_of("files") {
+        for f in ff {
+            println!("File:{}", f);
+            let s = std::fs::read_to_string(f).expect("could not read file");
+            let ll = LzList::from_str(&s).expect("not good lz file");
+            for (n,lz) in ll.items.iter().enumerate() {
+                let cf = CardFront::from_lz(lz).expect(&format!("Problem with lz item {} in {}:\n:{:?}",n,f,lz));
+                cards.push(cf);
+            }
+
+        }
+    }
+
+    let base_out = clap.value_of("out_base").unwrap();
+    let fbase = format!("{}_f_",base_out);
+    let bbase = format!("{}_b_",base_out);
+
+
+    let f_locs = page::pages_a4(fbase,4,4,&cards);
+
+
+    let cbacks:Vec<CardType>= cards.iter().map(|x|x.tp.clone()).collect();
+    let cbacks = page::page_flip(&cbacks,4);
+    let b_locs = page::pages_a4(bbase, 4, 4, &cbacks);
+    let all_pages = page::interlace(f_locs,b_locs);
+
+    page::unite_as_pdf(all_pages,format!("{}_res.pdf",base_out));
+
 }

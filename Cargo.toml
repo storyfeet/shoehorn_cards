@@ -6,5 +6,6 @@ edition = "2018"
 
 [dependencies]
 
+clap = "2.32.0"
 mksvg = {path = "../../mlibs/mksvg/"}
 lazy_conf = {path = "../../mlibs/lazy_conf/"}
