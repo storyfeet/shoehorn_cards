@@ -14,6 +14,7 @@ pub struct CardFront {
     pub name: String,
     pub tp: CardType,
     pub tx: String,
+    pub gl: Vec<String>,
 }
 
 impl CardFront {
@@ -24,11 +25,13 @@ impl CardFront {
                 name: l.name.clone(),
                 tp,
                 tx: l.get("tx").unwrap_or("".to_string()),
+                gl: l.get_array("gl", 10),
             },
             _ => CardFront {
                 name: l.name.clone(),
                 tp,
                 tx: l.get("tx").ok_or(CardErr::NoText)?,
+                gl: Vec::new(),
             },
         })
     }
@@ -43,17 +46,27 @@ impl Card<f64> for CardFront {
             .stroke_width(w / 50.);
         s.rect(0., 0., w, h, a);
 
-        let nname = wrap_nl(&self.name, 10);
+        let (wrap, fsize) = if self.name.len() > 18 {
+            (14, h / 13.)
+        } else {
+            (10, h / 11.)
+        };
+        let nname = wrap_nl(&self.name, wrap);
+
+        let a = Args::new()
+            .fill("black")
+            .text_anchor("middle")
+            .font_weight("bold");
+        s.text_lines(&nname, w / 2., h / 8., fsize, fsize, a);
+        let ttx = match self.tp {
+            CardType::Arc => self.gl.join("\n"),
+            _ => wrap_nl(&self.tx, 22),
+        };
 
         let a = Args::new().fill("black").text_anchor("middle");
-        s.text_lines(&nname, w / 2., h / 8., h / 11., h / 11., a);
+        s.text_lines(&ttx, w / 2., h / 2., h / 17., h / 17., a);
         /*
-            //Title
-            g.Textlines(cw/2, ch*2/16, nname, ch/11, ch/11, "black", "middle", "stroke:none;font-weight:
-        bold;font-family:Arial")
-
             // Text
-            ttx := msvg.Wrap(msvg.NL(bc.tx), 22)
             msvg.Lines(g, cw/2, ch*5/16, ch/17, ttx, fmt.Sprintf("stroke:none;fill:black;text-anchor:middle;
         font-family:Arial;font-size:%dpx", ch/17))
             //g.Textlines(cw/2, ch*5/16, ttx, ch/17, ch/17, "black", "middle", "stroke:none;")
