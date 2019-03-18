@@ -30,7 +30,7 @@ impl CardFront {
             _ => CardFront {
                 name: l.name.clone(),
                 tp,
-                tx: l.get("tx").ok_or(CardErr::NoText)?,
+                tx: mksvg::text::escapes(&l.get("tx").ok_or(CardErr::NoText)?),
                 gl: Vec::new(),
             },
         })
@@ -60,17 +60,26 @@ impl Card<f64> for CardFront {
         s.text_lines(&nname, w / 2., h / 8., fsize, fsize, a);
         let ttx = match self.tp {
             CardType::Arc => self.gl.join("\n"),
-            _ => wrap_nl(&self.tx, 22),
+            _ => wrap_nl(&self.tx, 21),
         };
+        let lc = ttx
+            .chars()
+            .fold(0, |v, c| if c == '\n' { v + 1 } else { v }) as f64;
 
         let a = Args::new().fill("black").text_anchor("middle");
-        s.text_lines(&ttx, w / 2., h / 2., h / 17., h / 17., a);
-        /*
-            // Text
-            msvg.Lines(g, cw/2, ch*5/16, ch/17, ttx, fmt.Sprintf("stroke:none;fill:black;text-anchor:middle;
-        font-family:Arial;font-size:%dpx", ch/17))
-            //g.Textlines(cw/2, ch*5/16, ttx, ch/17, ch/17, "black", "middle", "stroke:none;")
+        s.text_lines(
+            &ttx,
+            w / 2.,
+            (h - (h / 17.) * lc) / 2.,
+            h / 18.0,
+            h / 17.,
+            a,
+        );
+        let col = self.tp.color();
 
+        let a = Args::new().fill(col);
+        s.rect(0., h*0.8,w,h*0.1,a);
+        /*
             //Card Type
             barfill := TPColor(bc.tp)
             g.Rect(0, ch*16/20, cw, ch*3/20, fmt.Sprintf("fill:%s;stroke:none;", barfill))

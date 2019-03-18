@@ -29,7 +29,7 @@ impl CardType {
         }
     }
 
-    fn color(&self) -> &'static str {
+    pub fn color(&self) -> &'static str {
         match self {
             CardType::Skill => "#99ff99",
             CardType::Trait => "#ff9999",
