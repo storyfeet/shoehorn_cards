@@ -1,4 +1,5 @@
 use mksvg::{Args, Card, SvgArg, SvgWrite};
+use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CardType {
@@ -11,6 +12,15 @@ pub enum CardType {
     Arc,
     Whodunnit,
     Other(String),
+}
+
+impl fmt::Display for CardType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CardType::Other(s) => write!(f, "{}", s),
+            _ => write!(f, "{:?}", self),
+        }
+    }
 }
 
 impl CardType {

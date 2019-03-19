@@ -21,7 +21,7 @@ impl CardFront {
     pub fn from_lz(l: &Lz) -> Result<Self, CardErr> {
         let tp = CardType::from_str(&l.get("tp").ok_or(CardErr::NoType)?);
         Ok(match tp {
-            CardType::Arc => CardFront {
+            CardType::Arc | CardType::Role=> CardFront {
                 name: l.name.clone(),
                 tp,
                 tx: l.get("tx").unwrap_or("".to_string()),
@@ -59,7 +59,13 @@ impl Card<f64> for CardFront {
             .font_weight("bold");
         s.text_lines(&nname, w / 2., h / 8., fsize, fsize, a);
         let ttx = match self.tp {
-            CardType::Arc => self.gl.join("\n"),
+            CardType::Arc|CardType::Role => {
+                let mut n = 0;
+                self.gl.iter().fold("".to_string(), |s, v| {
+                    n += 1;
+                    format!("{}{}. {}\n", s, n, v)
+                })
+            }
             _ => wrap_nl(&self.tx, 21),
         };
         let lc = ttx
@@ -70,22 +76,28 @@ impl Card<f64> for CardFront {
         s.text_lines(
             &ttx,
             w / 2.,
-            (h - (h / 17.) * lc) / 2.,
+            h * 0.55 - (h / 30.) * lc,
             h / 18.0,
-            h / 17.,
+            h / 15.,
             a,
         );
         let col = self.tp.color();
 
         let a = Args::new().fill(col);
-        s.rect(0., h*0.8,w,h*0.1,a);
-        /*
-            //Card Type
-            barfill := TPColor(bc.tp)
-            g.Rect(0, ch*16/20, cw, ch*3/20, fmt.Sprintf("fill:%s;stroke:none;", barfill))
-            g.Text(cw/2, ch*9/10, bc.tp, fmt.Sprintf("text-anchor:middle;fill:black;font-family:Arial;font-
-        weight:bold;font-size:%dpx", ms/10))
+        s.rect(0., h * 0.8, w, h * 0.1, a);
 
-        */
+        let a = Args::new()
+            .fill("black")
+            .stroke("none")
+            .text_anchor("middle")
+            .font_weight("bold")
+            .font_family("Arial");
+        s.text(&self.tp.to_string(),w/2.,h*0.88,h*0.08,a);
+
+        let a = Args::new()
+            .stroke("black")
+            .fill("none")
+            .stroke_width(w / 50.);
+        s.rect(0., 0., w, h, a);
     }
 }
