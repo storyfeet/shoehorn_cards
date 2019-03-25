@@ -1,7 +1,7 @@
 use crate::card_type::CardType;
 use lazy_conf::{Getable, Lz};
 use mksvg::text::wrap_nl;
-use mksvg::{Args, Card, SvgArg, SvgWrite};
+use mksvg::{Args, Card, SvgArg, SvgWrite, Tag};
 
 #[derive(Debug, Clone)]
 pub enum CardErr {
@@ -21,7 +21,7 @@ impl CardFront {
     pub fn from_lz(l: &Lz) -> Result<Self, CardErr> {
         let tp = CardType::from_str(&l.get("tp").ok_or(CardErr::NoType)?);
         Ok(match tp {
-            CardType::Arc | CardType::Role=> CardFront {
+            CardType::Arc | CardType::Role => CardFront {
                 name: l.name.clone(),
                 tp,
                 tx: l.get("tx").unwrap_or("".to_string()),
@@ -40,11 +40,11 @@ impl CardFront {
 impl Card<f64> for CardFront {
     fn front<S: SvgWrite>(&self, s: &mut S, w: f64, h: f64) {
         //Background
-        let a = Args::new()
+        Tag::rect(0, 0, w, h)
             .stroke("black")
             .fill("#eeeeee")
-            .stroke_width(w / 50.);
-        s.rect(0., 0., w, h, a);
+            .stroke_width(w / 50.)
+            .write(s);
 
         let (wrap, fsize) = if self.name.len() > 18 {
             (14, h / 13.)
@@ -59,7 +59,7 @@ impl Card<f64> for CardFront {
             .font_weight("bold");
         s.text_lines(&nname, w / 2., h / 8., fsize, fsize, a);
         let ttx = match self.tp {
-            CardType::Arc|CardType::Role => {
+            CardType::Arc | CardType::Role => {
                 let mut n = 0;
                 self.gl.iter().fold("".to_string(), |s, v| {
                     n += 1;
@@ -92,7 +92,7 @@ impl Card<f64> for CardFront {
             .text_anchor("middle")
             .font_weight("bold")
             .font_family("Arial");
-        s.text(&self.tp.to_string(),w/2.,h*0.88,h*0.08,a);
+        s.text(&self.tp.to_string(), w / 2., h * 0.88, h * 0.08, a);
 
         let a = Args::new()
             .stroke("black")
