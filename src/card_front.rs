@@ -1,7 +1,7 @@
 use crate::card_type::CardType;
 use lazy_conf::{Getable, Lz};
-use mksvg::text::wrap_nl;
-use mksvg::{Args, Card, SvgArg, SvgWrite, Tag};
+//use mksvg::text::wrap_nl;
+use mksvg::{text,  Card, SvgArg, SvgWrite, Tag, Text};
 
 #[derive(Debug, Clone)]
 pub enum CardErr {
@@ -51,53 +51,52 @@ impl Card<f64> for CardFront {
         } else {
             (10, h / 11.)
         };
-        let nname = wrap_nl(&self.name, wrap);
+        let nname = text::wrap(&self.name, wrap);
 
-        let a = Args::new()
+        Text::lines(&nname, w / 2., h / 8., fsize)
             .fill("black")
+            .font_size(fsize)
             .text_anchor("middle")
-            .font_weight("bold");
-        s.text_lines(&nname, w / 2., h / 8., fsize, fsize, a);
+            .font_weight("bold")
+            .write(s);
         let ttx = match self.tp {
             CardType::Arc | CardType::Role => {
                 let mut n = 0;
-                self.gl.iter().fold("".to_string(), |s, v| {
-                    n += 1;
-                    format!("{}{}. {}\n", s, n, v)
-                })
+                self.gl
+                    .iter()
+                    .map(|v| {
+                        n += 1;
+                        format!("{}. {}", n, v)
+                    })
+                    .collect()
             }
-            _ => wrap_nl(&self.tx, 21),
+            _ => mksvg::text::wrap(&self.tx, 21),
         };
-        let lc = ttx
-            .chars()
-            .fold(0, |v, c| if c == '\n' { v + 1 } else { v }) as f64;
 
-        let a = Args::new().fill("black").text_anchor("middle");
-        s.text_lines(
-            &ttx,
-            w / 2.,
-            h * 0.55 - (h / 30.) * lc,
-            h / 18.0,
-            h / 15.,
-            a,
-        );
+        Text::lines(ttx, w / 2., h * 0.55, h / 15.)
+            .v_center()
+            .fill("black")
+            .text_anchor("middle")
+            .font_size(h / 18.)
+            .write(s);
+
         let col = self.tp.color();
 
-        let a = Args::new().fill(col);
-        s.rect(0., h * 0.8, w, h * 0.1, a);
+        Tag::rect(0.,h*0.8,w,h*0.1)
+            .fill(col)
+            .write(s);
 
-        let a = Args::new()
+        Text::new(&self.tp.to_string(), w / 2., h * 0.88, h * 0.08)
             .fill("black")
-            .stroke("none")
-            .text_anchor("middle")
             .font_weight("bold")
-            .font_family("Arial");
-        s.text(&self.tp.to_string(), w / 2., h * 0.88, h * 0.08, a);
+            .text_anchor("middle")
+            .font_family("Arial")
+            .write(s);
 
-        let a = Args::new()
+        Tag::rect(0., 0., w, h)
             .stroke("black")
             .fill("none")
-            .stroke_width(w / 50.);
-        s.rect(0., 0., w, h, a);
+            .stroke_width(w / 50.)
+            .write(s);
     }
 }
