@@ -9,7 +9,7 @@ pub enum CardType {
     Scene,
     Scenario,
     Role,
-    Arc,
+    Goal,
     Whodunnit,
     Other(String),
 }
@@ -33,7 +33,8 @@ impl CardType {
             "scene" => Scene,
             "scenario" => Scenario,
             "role" => Role,
-            "arc" => Arc,
+            "arc" => Goal,
+            "goal" => Goal,
             "whodunnit" => Whodunnit,
             _ => Other(s.to_string()),
         }
@@ -41,13 +42,13 @@ impl CardType {
 
     pub fn color(&self) -> &'static str {
         match self {
-            CardType::Skill => "#99ff99",
-            CardType::Trait => "#ff9999",
+            CardType::Skill => "#cdde87",
+            CardType::Trait => "#b7bec8",
             CardType::Event => "#ff3333",
             CardType::Scene => "#33ff33",
             CardType::Scenario => "#3333ff",
-            CardType::Role => "#9999ff",
-            CardType::Arc => "#ffff99",
+            CardType::Role => "#e9afaf",
+            CardType::Goal => "#f4ca8c",
             CardType::Whodunnit => "#99ffff",
             CardType::Other(_) => "white",
         }
@@ -61,7 +62,7 @@ impl CardType {
             CardType::Scene => "Scene",
             CardType::Scenario => "Scenario",
             CardType::Role => "Role",
-            CardType::Arc => "Arc",
+            CardType::Goal => "Goal",
             CardType::Whodunnit => "Whodunnit",
             CardType::Other(s) => &s,
         }

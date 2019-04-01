@@ -1,7 +1,7 @@
 use crate::card_type::CardType;
 use lazy_conf::{Getable, Lz};
 //use mksvg::text::wrap_nl;
-use mksvg::{text,  Card, SvgArg, SvgWrite, Tag, Text};
+use mksvg::{text, Card, SvgArg, SvgWrite, Tag, Text};
 
 #[derive(Debug, Clone)]
 pub enum CardErr {
@@ -21,7 +21,7 @@ impl CardFront {
     pub fn from_lz(l: &Lz) -> Result<Self, CardErr> {
         let tp = CardType::from_str(&l.get("tp").ok_or(CardErr::NoType)?);
         Ok(match tp {
-            CardType::Arc | CardType::Role => CardFront {
+            CardType::Goal | CardType::Role => CardFront {
                 name: l.name.clone(),
                 tp,
                 tx: l.get("tx").unwrap_or("".to_string()),
@@ -60,7 +60,7 @@ impl Card<f64> for CardFront {
             .font_weight("bold")
             .write(s);
         let ttx = match self.tp {
-            CardType::Arc | CardType::Role => {
+            CardType::Goal | CardType::Role => {
                 let mut n = 0;
                 self.gl
                     .iter()
@@ -82,9 +82,7 @@ impl Card<f64> for CardFront {
 
         let col = self.tp.color();
 
-        Tag::rect(0.,h*0.8,w,h*0.1)
-            .fill(col)
-            .write(s);
+        Tag::rect(0., h * 0.8, w, h * 0.1).fill(col).write(s);
 
         Text::new(&self.tp.to_string(), w / 2., h * 0.88, h * 0.08)
             .fill("black")
